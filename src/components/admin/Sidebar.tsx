@@ -9,7 +9,7 @@ import {
   Settings, 
   LogOut, 
   Package,
-  TruckDelivery,
+  Truck,
   BarChart4,
   CreditCard
 } from 'lucide-react';
@@ -38,7 +38,7 @@ const menuItems = [
   {
     title: 'Frete',
     href: '/admin/frete',
-    icon: <TruckDelivery size={20} />,
+    icon: <Truck size={20} />,
   },
   {
     title: 'Pagamentos',

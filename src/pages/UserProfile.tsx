@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, User } from 'lucide-react';
+import { ShoppingBag, User, Settings, Heart } from 'lucide-react';
 
 const UserProfile = () => {
   const { user, profile, updateProfile } = useAuth();
@@ -76,28 +75,44 @@ const UserProfile = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <h1 className="font-playfair text-3xl font-bold mb-8">
-              Meu <span className="text-carol-red">Perfil</span>
+              Minha <span className="text-carol-red">Conta</span>
             </h1>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="md:col-span-1">
                 <div className="bg-white rounded-lg shadow-sm border p-6">
                   <div className="flex flex-col items-center">
-                    <div className="bg-gray-100 h-20 w-20 rounded-full flex items-center justify-center mb-4">
-                      <User className="h-10 w-10 text-gray-500" />
+                    <div className="bg-pink-50 h-20 w-20 rounded-full flex items-center justify-center mb-4">
+                      <User className="h-10 w-10 text-pink-400" />
                     </div>
                     <h2 className="font-medium text-lg">
                       {profile?.first_name} {profile?.last_name}
                     </h2>
                     <p className="text-gray-500 text-sm mb-4">{user?.email}</p>
                     
-                    <Link
-                      to="/meus-pedidos"
-                      className="w-full flex items-center justify-center gap-2 py-2 border border-carol-red text-carol-red rounded-md hover:bg-carol-red/10 transition-colors"
-                    >
-                      <ShoppingBag className="h-4 w-4" />
-                      Meus Pedidos
-                    </Link>
+                    <div className="w-full space-y-2 mt-2">
+                      <Link
+                        to="/meus-pedidos"
+                        className="w-full flex items-center justify-center gap-2 py-2 border border-carol-red text-carol-red rounded-md hover:bg-carol-red/10 transition-colors"
+                      >
+                        <ShoppingBag className="h-4 w-4" />
+                        Meus Pedidos
+                      </Link>
+                      <Link
+                        to="/perfil"
+                        className="w-full flex items-center justify-center gap-2 py-2 bg-pink-100 text-pink-700 rounded-md hover:bg-pink-200 transition-colors"
+                      >
+                        <Settings className="h-4 w-4" />
+                        Configurações
+                      </Link>
+                      <Link
+                        to="/favoritos"
+                        className="w-full flex items-center justify-center gap-2 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100 transition-colors"
+                      >
+                        <Heart className="h-4 w-4" />
+                        Lista de Desejos
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -191,7 +206,7 @@ const UserProfile = () => {
                     
                     <Button
                       type="submit"
-                      className="w-full md:w-auto bg-carol-red hover:bg-carol-red/90"
+                      className="w-full md:w-auto bg-pink-500 hover:bg-pink-600 text-white"
                       disabled={loading}
                     >
                       {loading ? (

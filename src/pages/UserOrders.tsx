@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { OrderType } from '@/integrations/supabase/db-types';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ import { ShoppingBag, ChevronRight, Package, Calendar } from 'lucide-react';
 
 const UserOrders = () => {
   const { user } = useAuth();
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<OrderType[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -84,15 +85,15 @@ const UserOrders = () => {
 
           {loading ? (
             <div className="flex justify-center items-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-carol-red"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500"></div>
             </div>
           ) : orders.length === 0 ? (
-            <div className="text-center py-16 bg-gray-50 rounded-lg">
-              <ShoppingBag className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+            <div className="text-center py-16 bg-pink-50 rounded-lg">
+              <ShoppingBag className="h-16 w-16 mx-auto text-pink-300 mb-4" />
               <h2 className="text-2xl font-semibold mb-2">Nenhum pedido encontrado</h2>
               <p className="text-gray-500 mb-6">Você ainda não fez nenhum pedido</p>
               <Button
-                className="bg-carol-red hover:bg-carol-red/90"
+                className="bg-pink-500 hover:bg-pink-600 text-white"
                 asChild
               >
                 <Link to="/produtos">Começar a comprar</Link>
@@ -102,13 +103,13 @@ const UserOrders = () => {
             <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50 text-left">
+                  <thead className="bg-pink-50 text-left">
                     <tr>
-                      <th className="px-6 py-4 text-sm font-medium text-gray-500">Pedido</th>
-                      <th className="px-6 py-4 text-sm font-medium text-gray-500">Data</th>
-                      <th className="px-6 py-4 text-sm font-medium text-gray-500">Status</th>
-                      <th className="px-6 py-4 text-sm font-medium text-gray-500">Total</th>
-                      <th className="px-6 py-4 text-sm font-medium text-gray-500 text-right">Ações</th>
+                      <th className="px-6 py-4 text-sm font-medium text-gray-600">Pedido</th>
+                      <th className="px-6 py-4 text-sm font-medium text-gray-600">Data</th>
+                      <th className="px-6 py-4 text-sm font-medium text-gray-600">Status</th>
+                      <th className="px-6 py-4 text-sm font-medium text-gray-600">Total</th>
+                      <th className="px-6 py-4 text-sm font-medium text-gray-600 text-right">Ações</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -119,7 +120,7 @@ const UserOrders = () => {
                         <tr key={order.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
-                              <Package className="h-5 w-5 text-carol-red mr-2" />
+                              <Package className="h-5 w-5 text-pink-500 mr-2" />
                               <span className="font-medium">#{order.id.slice(0, 8)}</span>
                             </div>
                           </td>
@@ -143,7 +144,7 @@ const UserOrders = () => {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-carol-red hover:bg-carol-red/10"
+                              className="text-pink-500 hover:bg-pink-50"
                               asChild
                             >
                               <Link to={`/pedido/${order.id}`}>

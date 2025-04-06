@@ -1,72 +1,61 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { OrderType } from '@/integrations/supabase/db-types';
 import Sidebar from '@/components/admin/Sidebar';
 import { Button } from '@/components/ui/button';
+import { 
+  ChevronRight, 
+  Search, 
+  Package, 
+  Calendar,
+  Filter
+} from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { useToast } from '@/components/ui/use-toast';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { useToast } from '@/components/ui/use-toast';
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Eye, Search, Package } from 'lucide-react';
+} from "@/components/ui/select";
 
 const AdminOrders = () => {
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<OrderType[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    const fetchOrders = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('orders')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-  const fetchOrders = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          profiles:user_id (
-            first_name,
-            last_name,
-            email
-          )
-        `)
-        .order('created_at', { ascending: false });
+        if (error) {
+          throw error;
+        }
 
-      if (error) {
-        throw error;
+        setOrders(data || []);
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+        toast({
+          title: "Erro ao carregar pedidos",
+          description: "Não foi possível carregar a lista de pedidos.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
       }
+    };
 
-      setOrders(data || []);
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-      toast({
-        title: "Erro ao carregar pedidos",
-        description: "Ocorreu um erro ao buscar os pedidos.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchOrders();
+  }, [toast]);
 
   const updateOrderStatus = async (orderId: string, status: string) => {
     try {
@@ -79,16 +68,13 @@ const AdminOrders = () => {
         throw error;
       }
 
-      setOrders(orders.map(order => {
-        if (order.id === orderId) {
-          return { ...order, status };
-        }
-        return order;
-      }));
+      setOrders(orders.map(order => 
+        order.id === orderId ? { ...order, status } : order
+      ));
 
       toast({
         title: "Status atualizado",
-        description: `O status do pedido foi atualizado para ${getStatusText(status)}.`
+        description: `O status do pedido foi alterado para ${getStatusText(status)}.`
       });
     } catch (error) {
       console.error('Error updating order status:', error);
@@ -135,37 +121,42 @@ const AdminOrders = () => {
   };
 
   const filteredOrders = orders.filter(order => {
-    const matchesSearch = searchQuery === '' || 
+    const matchesSearch = 
       order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      `${order.profiles?.first_name} ${order.profiles?.last_name}`.toLowerCase().includes(searchQuery.toLowerCase());
-      
+      order.shipping_address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.shipping_city.toLowerCase().includes(searchQuery.toLowerCase());
+    
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      <div className="flex-1 p-8">
-        <div className="flex justify-between items-center mb-6">
+      <main className="flex-grow p-8 ml-64">
+        <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <h1 className="text-2xl font-bold">Gerenciar Pedidos</h1>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex flex-col sm:flex-row gap-4 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Buscar por ID do pedido ou cliente..."
-                className="pl-10"
+          
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input 
+                type="search" 
+                placeholder="Buscar pedidos..." 
+                className="pl-9 w-full md:w-auto min-w-[250px]"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <div className="w-full sm:w-48">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
+            
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Select
+                value={statusFilter}
+                onValueChange={setStatusFilter}
+              >
+                <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Filtrar por status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -179,93 +170,105 @@ const AdminOrders = () => {
               </Select>
             </div>
           </div>
-
-          {loading ? (
-            <div className="flex justify-center items-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-carol-red"></div>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableCaption>Lista de pedidos</TableCaption>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Pedido</TableHead>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredOrders.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8">
-                        <div className="flex flex-col items-center justify-center text-gray-500">
-                          <Package className="h-12 w-12 mb-2" />
-                          <p className="text-lg font-medium">Nenhum pedido encontrado</p>
-                          {(searchQuery || statusFilter !== 'all') && (
-                            <p>Tente outros filtros de busca</p>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredOrders.map((order) => {
-                      const orderDate = new Date(order.created_at).toLocaleDateString('pt-BR');
-                      
-                      return (
-                        <TableRow key={order.id}>
-                          <TableCell className="font-medium">#{order.id.slice(0, 8)}</TableCell>
-                          <TableCell>
-                            {order.profiles?.first_name} {order.profiles?.last_name}
-                          </TableCell>
-                          <TableCell>{orderDate}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <span className={`inline-flex px-2 py-1 text-xs rounded-full ${getStatusColor(order.status)}`}>
-                                {getStatusText(order.status)}
-                              </span>
-                              <Select
-                                value={order.status}
-                                onValueChange={(value) => updateOrderStatus(order.id, value)}
-                              >
-                                <SelectTrigger className="h-7 w-28">
-                                  <SelectValue placeholder="Alterar" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="pending">Pendente</SelectItem>
-                                  <SelectItem value="processing">Processando</SelectItem>
-                                  <SelectItem value="shipped">Enviado</SelectItem>
-                                  <SelectItem value="delivered">Entregue</SelectItem>
-                                  <SelectItem value="cancelled">Cancelado</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            R$ {order.total.toFixed(2).replace('.', ',')}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => navigate(`/admin/pedidos/${order.id}`)}
-                            >
-                              <Eye className="h-4 w-4 mr-1" /> Detalhes
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
         </div>
-      </div>
+        
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500"></div>
+          </div>
+        ) : filteredOrders.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-lg shadow-sm">
+            <Package className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Nenhum pedido encontrado</h2>
+            <p className="text-gray-500">
+              {searchQuery || statusFilter !== 'all' 
+                ? 'Nenhum pedido corresponde aos filtros selecionados.' 
+                : 'Não há pedidos para exibir.'}
+            </p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 text-left">
+                  <tr>
+                    <th className="px-6 py-4 text-sm font-medium text-gray-500">Pedido</th>
+                    <th className="px-6 py-4 text-sm font-medium text-gray-500">Data</th>
+                    <th className="px-6 py-4 text-sm font-medium text-gray-500">Cliente</th>
+                    <th className="px-6 py-4 text-sm font-medium text-gray-500">Status</th>
+                    <th className="px-6 py-4 text-sm font-medium text-gray-500">Total</th>
+                    <th className="px-6 py-4 text-sm font-medium text-gray-500 text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredOrders.map((order) => {
+                    const orderDate = new Date(order.created_at).toLocaleDateString('pt-BR');
+                    
+                    return (
+                      <tr key={order.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <Package className="h-5 w-5 text-pink-500 mr-2" />
+                            <span className="font-medium">#{order.id.slice(0, 8)}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <Calendar className="h-4 w-4 text-gray-400 mr-2" />
+                            {orderDate}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <span className="font-medium">{order.user_id.slice(0, 8)}</span>
+                            <div className="text-sm text-gray-500">
+                              {order.shipping_city}, {order.shipping_state}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Select
+                            defaultValue={order.status}
+                            onValueChange={(value) => updateOrderStatus(order.id, value)}
+                          >
+                            <SelectTrigger className={`w-[140px] ${getStatusColor(order.status)}`}>
+                              <SelectValue placeholder="Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pendente</SelectItem>
+                              <SelectItem value="processing">Processando</SelectItem>
+                              <SelectItem value="shipped">Enviado</SelectItem>
+                              <SelectItem value="delivered">Entregue</SelectItem>
+                              <SelectItem value="cancelled">Cancelado</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="font-medium">
+                            R$ {order.total.toFixed(2).replace('.', ',')}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-pink-500 hover:bg-pink-50"
+                            asChild
+                          >
+                            <Link to={`/admin/pedidos/${order.id}`}>
+                              Detalhes <ChevronRight className="h-4 w-4 ml-1" />
+                            </Link>
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </main>
     </div>
   );
 };

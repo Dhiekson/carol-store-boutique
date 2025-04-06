@@ -75,7 +75,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (error) {
       console.error('Error fetching profile:', error);
     } else {
-      setProfile(data);
+      setProfile(data as ProfileType);
     }
   };
 
@@ -142,7 +142,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     navigate('/login');
   };
 
-  const updateProfile = async (data: any) => {
+  const updateProfile = async (data: Partial<ProfileType>) => {
     if (!user) return { error: new Error('Usuário não autenticado') };
 
     try {

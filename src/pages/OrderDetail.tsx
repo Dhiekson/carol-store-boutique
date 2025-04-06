@@ -3,26 +3,22 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { OrderType, OrderItemType, ProductType } from '@/integrations/supabase/db-types';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Truck, Calendar, MapPin, CreditCard } from 'lucide-react';
+import { Package, ChevronLeft, Clock, MapPin, CreditCard } from 'lucide-react';
 
 const OrderDetail = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const [order, setOrder] = useState<OrderType | null>(null);
+  const [orderItems, setOrderItems] = useState<(OrderItemType & { product: ProductType })[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [order, setOrder] = useState<any>(null);
-  const [items, setItems] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchOrderDetails = async () => {
-      if (!user || !id) {
-        setError("Acesso não autorizado");
-        setLoading(false);
-        return;
-      }
+      if (!user || !id) return;
 
       try {
         const { data: orderData, error: orderError } = await supabase
@@ -38,14 +34,11 @@ const OrderDetail = () => {
 
         setOrder(orderData);
 
-        // Fetch order items
         const { data: itemsData, error: itemsError } = await supabase
           .from('order_items')
           .select(`
             *,
-            product:product_id (
-              id, name, price, image_url, category
-            )
+            product:products(*)
           `)
           .eq('order_id', id);
 
@@ -53,17 +46,53 @@ const OrderDetail = () => {
           throw itemsError;
         }
 
-        setItems(itemsData);
+        setOrderItems(itemsData as (OrderItemType & { product: ProductType })[]);
       } catch (error) {
         console.error('Error fetching order details:', error);
-        setError("Erro ao carregar informações do pedido");
       } finally {
         setLoading(false);
       }
     };
 
     fetchOrderDetails();
-  }, [id, user]);
+  }, [user, id]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <main className="flex-grow pt-24 pb-16 flex justify-center items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500"></div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <main className="flex-grow pt-24 pb-16">
+          <div className="container mx-auto px-4 text-center">
+            <Package className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+            <h2 className="text-2xl font-semibold mb-2">Pedido não encontrado</h2>
+            <p className="text-gray-500 mb-6">O pedido que você está procurando não existe ou você não tem permissão para acessá-lo.</p>
+            <Button
+              className="bg-pink-500 hover:bg-pink-600 text-white"
+              asChild
+            >
+              <Link to="/meus-pedidos">
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Voltar para meus pedidos
+              </Link>
+            </Button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -99,176 +128,113 @@ const OrderDetail = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar />
-        <main className="flex-grow pt-24 pb-16">
-          <div className="container mx-auto px-4">
-            <div className="flex justify-center items-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-carol-red"></div>
-            </div>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
-  if (error || !order) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar />
-        <main className="flex-grow pt-24 pb-16">
-          <div className="container mx-auto px-4 text-center">
-            <h1 className="text-3xl font-bold mb-4">Pedido não encontrado</h1>
-            <p className="mb-8">{error || "O pedido que você está procurando não está disponível."}</p>
-            <Button asChild className="bg-carol-red hover:bg-carol-red/90">
-              <Link to="/meus-pedidos">Voltar para meus pedidos</Link>
-            </Button>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
   const orderDate = new Date(order.created_at).toLocaleDateString('pt-BR');
+  const orderTime = new Date(order.created_at).toLocaleTimeString('pt-BR');
 
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <main className="flex-grow pt-24 pb-16">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="font-playfair text-3xl font-bold">
-                Pedido <span className="text-carol-red">#{order.id.slice(0, 8)}</span>
+          <div className="mb-6">
+            <Link 
+              to="/meus-pedidos" 
+              className="inline-flex items-center text-pink-500 hover:text-pink-600"
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              <span>Voltar para meus pedidos</span>
+            </Link>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="font-playfair text-2xl font-bold">
+                Pedido <span className="text-pink-500">#{order.id.slice(0, 8)}</span>
               </h1>
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/meus-pedidos">
-                  <ChevronLeft className="h-4 w-4 mr-1" /> Voltar
-                </Link>
-              </Button>
+              <span className={`inline-flex px-3 py-1 text-sm rounded-full ${getStatusColor(order.status)}`}>
+                {getStatusText(order.status)}
+              </span>
             </div>
-            
-            <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center">
-                  <Calendar className="h-5 w-5 text-carol-red mr-2" />
-                  <span className="font-medium">Pedido realizado em {orderDate}</span>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="flex items-start space-x-3">
+                <Clock className="h-5 w-5 text-gray-400" />
+                <div>
+                  <p className="text-sm text-gray-500">Data do pedido</p>
+                  <p className="font-medium">{orderDate} às {orderTime}</p>
                 </div>
-                <span className={`inline-flex px-3 py-1 text-sm rounded-full ${getStatusColor(order.status)}`}>
-                  {getStatusText(order.status)}
-                </span>
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                <div className="space-y-2">
-                  <h3 className="font-medium flex items-center">
-                    <MapPin className="h-4 w-4 text-carol-red mr-1" /> Endereço de entrega
-                  </h3>
-                  <p className="text-gray-600">
-                    {order.shipping_address}<br />
-                    {order.shipping_city}, {order.shipping_state}<br />
-                    {order.shipping_zip_code}
-                  </p>
+              <div className="flex items-start space-x-3">
+                <MapPin className="h-5 w-5 text-gray-400" />
+                <div>
+                  <p className="text-sm text-gray-500">Endereço de entrega</p>
+                  <p className="font-medium">{order.shipping_address}</p>
+                  <p className="text-sm">{order.shipping_city}, {order.shipping_state} - {order.shipping_zip_code}</p>
                 </div>
-                <div className="space-y-2">
-                  <h3 className="font-medium flex items-center">
-                    <CreditCard className="h-4 w-4 text-carol-red mr-1" /> Método de pagamento
-                  </h3>
-                  <p className="text-gray-600 capitalize">
-                    {order.payment_method}
-                  </p>
+              </div>
+              <div className="flex items-start space-x-3">
+                <CreditCard className="h-5 w-5 text-gray-400" />
+                <div>
+                  <p className="text-sm text-gray-500">Método de pagamento</p>
+                  <p className="font-medium">{order.payment_method}</p>
                 </div>
               </div>
             </div>
-            
-            <div className="bg-white rounded-lg shadow-sm border overflow-hidden mb-6">
-              <h3 className="font-semibold text-lg px-6 py-4 border-b">Itens do Pedido</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead className="bg-gray-50 text-left">
-                    <tr>
-                      <th className="px-6 py-3 text-sm font-medium text-gray-500">Produto</th>
-                      <th className="px-6 py-3 text-sm font-medium text-gray-500">Preço</th>
-                      <th className="px-6 py-3 text-sm font-medium text-gray-500">Quantidade</th>
-                      <th className="px-6 py-3 text-sm font-medium text-gray-500 text-right">Subtotal</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {items.map((item) => (
-                      <tr key={item.id}>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center">
-                            <div className="h-12 w-12 flex-shrink-0 rounded-md overflow-hidden mr-4">
-                              <img
-                                src={item.product?.image_url || 'https://via.placeholder.com/100'}
-                                alt={item.product?.name}
-                                className="h-full w-full object-cover object-center"
-                              />
-                            </div>
-                            <Link
-                              to={`/produto/${item.product_id}`}
-                              className="font-medium text-gray-900 hover:text-carol-red"
-                            >
-                              {item.product?.name}
-                            </Link>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div>
-                            R$ {item.price.toFixed(2).replace('.', ',')}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">{item.quantity}</td>
-                        <td className="px-6 py-4 text-right">
-                          <span className="font-medium">
-                            R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm border overflow-hidden mb-6">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-lg font-semibold">Itens do pedido</h2>
             </div>
-            
-            <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h3 className="font-semibold text-lg mb-4">Resumo</h3>
-              
-              <dl className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <dt className="text-gray-600">Subtotal</dt>
-                  <dd>
-                    R$ {(order.total - order.shipping_fee).toFixed(2).replace('.', ',')}
-                  </dd>
+            <div className="divide-y divide-gray-200">
+              {orderItems.map((item) => (
+                <div key={item.id} className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                  <div className="flex items-center mb-4 sm:mb-0">
+                    <div className="h-16 w-16 rounded overflow-hidden bg-gray-100 mr-4">
+                      {item.product.image_url ? (
+                        <img 
+                          src={item.product.image_url} 
+                          alt={item.product.name} 
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center bg-gray-200">
+                          <Package className="h-6 w-6 text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="font-medium">{item.product.name}</h3>
+                      <p className="text-sm text-gray-500">Quantidade: {item.quantity}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium">
+                      R$ {item.price.toFixed(2).replace('.', ',')}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Subtotal: R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <dt className="text-gray-600">Frete</dt>
-                  <dd>
-                    R$ {order.shipping_fee.toFixed(2).replace('.', ',')}
-                  </dd>
-                </div>
-                <div className="flex justify-between pt-2 border-t font-medium text-base">
-                  <dt>Total</dt>
-                  <dd>
-                    R$ {order.total.toFixed(2).replace('.', ',')}
-                  </dd>
-                </div>
-              </dl>
-              
-              <div className="mt-6 border-t pt-6">
-                <div className="flex items-center text-sm text-gray-600">
-                  <Truck className="h-4 w-4 text-carol-red mr-2" />
-                  {order.status === 'shipped' || order.status === 'delivered' ? (
-                    <span>Seu pedido foi enviado e está a caminho!</span>
-                  ) : (
-                    <span>Seu pedido está sendo processado e será enviado em breve.</span>
-                  )}
-                </div>
-              </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="flex justify-between mb-2">
+              <span className="text-gray-600">Subtotal:</span>
+              <span>R$ {(order.total - order.shipping_fee).toFixed(2).replace('.', ',')}</span>
+            </div>
+            <div className="flex justify-between mb-2">
+              <span className="text-gray-600">Frete:</span>
+              <span>R$ {order.shipping_fee.toFixed(2).replace('.', ',')}</span>
+            </div>
+            <div className="border-t border-dashed border-gray-200 my-3 pt-3 flex justify-between">
+              <span className="font-semibold">Total:</span>
+              <span className="font-semibold text-lg">
+                R$ {order.total.toFixed(2).replace('.', ',')}
+              </span>
             </div>
           </div>
         </div>

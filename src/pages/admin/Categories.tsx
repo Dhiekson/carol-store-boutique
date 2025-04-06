@@ -1,96 +1,90 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { CategoryType } from '@/integrations/supabase/db-types';
 import Sidebar from '@/components/admin/Sidebar';
 import { Button } from '@/components/ui/button';
+import { PlusCircle, Edit, Trash2, Search, X, Image } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Layers, Plus, Pencil, Trash2 } from 'lucide-react';
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 const AdminCategories = () => {
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<CategoryType[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [dialogOpen, setDialogOpen] = useState<boolean>(false);
-  const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [currentCategory, setCurrentCategory] = useState<any>(null);
-  const [form, setForm] = useState({
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentCategory, setCurrentCategory] = useState<CategoryType | null>(null);
+  const [formData, setFormData] = useState({
     name: '',
     description: '',
-    image_url: ''
+    image_url: '',
   });
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    const fetchCategories = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('categories')
+          .select('*')
+          .order('created_at', { ascending: true });
 
-  const fetchCategories = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('name');
+        if (error) {
+          throw error;
+        }
 
-      if (error) {
-        throw error;
+        setCategories(data || []);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        toast({
+          title: "Erro ao carregar categorias",
+          description: "Não foi possível carregar a lista de categorias.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
       }
+    };
 
-      setCategories(data || []);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-      toast({
-        title: "Erro ao carregar categorias",
-        description: "Ocorreu um erro ao buscar as categorias.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
+    fetchCategories();
+  }, [toast]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const openNewCategoryDialog = () => {
-    setForm({
+    setFormData({
       name: '',
       description: '',
-      image_url: ''
+      image_url: '',
     });
     setIsEditing(false);
     setCurrentCategory(null);
     setDialogOpen(true);
   };
 
-  const openEditCategoryDialog = (category: any) => {
-    setForm({
+  const openEditCategoryDialog = (category: CategoryType) => {
+    setFormData({
       name: category.name,
       description: category.description || '',
-      image_url: category.image_url || ''
+      image_url: category.image_url || '',
     });
     setIsEditing(true);
     setCurrentCategory(category);
     setDialogOpen(true);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -98,239 +92,236 @@ const AdminCategories = () => {
     
     try {
       if (isEditing && currentCategory) {
-        // Update existing category
         const { error } = await supabase
           .from('categories')
           .update({
-            name: form.name,
-            description: form.description,
-            image_url: form.image_url,
+            name: formData.name,
+            description: formData.description,
+            image_url: formData.image_url,
             updated_at: new Date()
           })
           .eq('id', currentCategory.id);
 
         if (error) throw error;
-        
+
+        setCategories(categories.map(cat => 
+          cat.id === currentCategory.id ? { ...cat, ...formData } : cat
+        ));
+
         toast({
           title: "Categoria atualizada",
           description: "A categoria foi atualizada com sucesso."
         });
-        
-        // Update local state
-        setCategories(categories.map(cat => 
-          cat.id === currentCategory.id ? { ...cat, ...form } : cat
-        ));
       } else {
-        // Create new category
         const { data, error } = await supabase
           .from('categories')
           .insert({
-            name: form.name,
-            description: form.description,
-            image_url: form.image_url
+            name: formData.name,
+            description: formData.description,
+            image_url: formData.image_url,
           })
           .select();
 
         if (error) throw error;
-        
+
+        setCategories([...(data || []), ...categories]);
+
         toast({
           title: "Categoria criada",
-          description: "A nova categoria foi criada com sucesso."
+          description: "A categoria foi criada com sucesso."
         });
-        
-        // Add to local state if we got data back
-        if (data && data.length > 0) {
-          setCategories([...categories, data[0]]);
-        } else {
-          // Refresh from database if we didn't get data back
-          fetchCategories();
-        }
       }
-      
-      // Close dialog
+
       setDialogOpen(false);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving category:', error);
       toast({
-        title: "Erro ao salvar categoria",
-        description: error.message || "Ocorreu um erro ao salvar a categoria.",
+        title: isEditing ? "Erro ao atualizar categoria" : "Erro ao criar categoria",
+        description: "Verifique os dados e tente novamente.",
         variant: "destructive"
       });
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Tem certeza que deseja excluir esta categoria?')) return;
+    if (window.confirm('Tem certeza que deseja excluir esta categoria?')) {
+      try {
+        const { error } = await supabase
+          .from('categories')
+          .delete()
+          .eq('id', id);
 
-    try {
-      const { error } = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', id);
+        if (error) {
+          throw error;
+        }
 
-      if (error) {
-        throw error;
+        setCategories(categories.filter(category => category.id !== id));
+        toast({
+          title: "Categoria excluída",
+          description: "A categoria foi excluída com sucesso."
+        });
+      } catch (error) {
+        console.error('Error deleting category:', error);
+        toast({
+          title: "Erro ao excluir categoria",
+          description: "Essa categoria pode estar sendo usada por produtos.",
+          variant: "destructive"
+        });
       }
-
-      setCategories(categories.filter(category => category.id !== id));
-      toast({
-        title: "Categoria excluída",
-        description: "A categoria foi removida com sucesso."
-      });
-    } catch (error: any) {
-      console.error('Error deleting category:', error);
-      toast({
-        title: "Erro ao excluir categoria",
-        description: error.message || "Ocorreu um erro ao excluir a categoria.",
-        variant: "destructive"
-      });
     }
   };
 
-  return (
-    <div className="flex min-h-screen bg-gray-100">
-      <Sidebar />
-      <div className="flex-1 p-8">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Gerenciar Categorias</h1>
-          <Button
-            className="bg-carol-red hover:bg-carol-red/90"
-            onClick={openNewCategoryDialog}
-          >
-            <Plus className="h-4 w-4 mr-2" /> Nova Categoria
-          </Button>
-        </div>
+  const filteredCategories = categories.filter(category => 
+    category.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
+  return (
+    <div className="flex min-h-screen bg-gray-50">
+      <Sidebar />
+      <main className="flex-grow p-8 ml-64">
+        <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <h1 className="text-2xl font-bold">Gerenciar Categorias</h1>
+          
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input 
+                type="search" 
+                placeholder="Buscar categorias..." 
+                className="pl-9 w-full md:w-auto min-w-[250px]"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            
+            <Button onClick={openNewCategoryDialog}>
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Nova Categoria
+            </Button>
+          </div>
+        </div>
+        
         {loading ? (
           <div className="flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-carol-red"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500"></div>
+          </div>
+        ) : filteredCategories.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-lg shadow-sm">
+            <h2 className="text-xl font-semibold mb-2">Nenhuma categoria encontrada</h2>
+            <p className="text-gray-500 mb-6">
+              {searchQuery ? 'Nenhuma categoria corresponde à sua pesquisa.' : 'Nenhuma categoria cadastrada ainda.'}
+            </p>
+            <Button onClick={openNewCategoryDialog}>
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Adicionar Categoria
+            </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {categories.length === 0 ? (
-              <div className="col-span-full text-center py-12 bg-white rounded-lg shadow">
-                <Layers className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                <h2 className="text-2xl font-semibold mb-2">Nenhuma categoria encontrada</h2>
-                <p className="text-gray-500 mb-6">Adicione categorias para organizar seus produtos</p>
-                <Button
-                  className="bg-carol-red hover:bg-carol-red/90"
-                  onClick={openNewCategoryDialog}
-                >
-                  <Plus className="h-4 w-4 mr-2" /> Adicionar Categoria
-                </Button>
-              </div>
-            ) : (
-              categories.map((category) => (
-                <Card key={category.id}>
-                  <CardHeader>
-                    <CardTitle>{category.name}</CardTitle>
-                    {category.description && (
-                      <CardDescription>{category.description}</CardDescription>
-                    )}
-                  </CardHeader>
-                  {category.image_url && (
-                    <CardContent>
-                      <div className="h-40 rounded-md overflow-hidden">
-                        <img
-                          src={category.image_url}
-                          alt={category.name}
-                          className="h-full w-full object-cover object-center"
-                        />
-                      </div>
-                    </CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {filteredCategories.map((category) => (
+              <div 
+                key={category.id} 
+                className="bg-white rounded-lg shadow-sm border overflow-hidden hover:shadow-md transition-shadow"
+              >
+                <div className="h-40 bg-gray-100 relative">
+                  {category.image_url ? (
+                    <img 
+                      src={category.image_url} 
+                      alt={category.name} 
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center bg-pink-50">
+                      <Image className="h-12 w-12 text-pink-200" />
+                    </div>
                   )}
-                  <CardFooter className="justify-end space-x-2">
-                    <Button
+                </div>
+                <div className="p-4">
+                  <h3 className="font-semibold text-lg mb-1">{category.name}</h3>
+                  {category.description && (
+                    <p className="text-gray-500 text-sm mb-4 line-clamp-2">{category.description}</p>
+                  )}
+                  <div className="flex gap-2">
+                    <Button 
                       variant="outline"
                       size="sm"
+                      className="flex-1"
                       onClick={() => openEditCategoryDialog(category)}
                     >
-                      <Pencil className="h-4 w-4 mr-1" /> Editar
+                      <Edit className="h-4 w-4 mr-2" /> Editar
                     </Button>
-                    <Button
+                    <Button 
                       variant="outline"
                       size="sm"
-                      className="text-red-600 hover:text-red-700"
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
                       onClick={() => handleDelete(category.id)}
                     >
-                      <Trash2 className="h-4 w-4 mr-1" /> Excluir
+                      <Trash2 className="h-4 w-4" />
                     </Button>
-                  </CardFooter>
-                </Card>
-              ))
-            )}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
-
-        {/* Category Form Dialog */}
+        
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
                 {isEditing ? 'Editar Categoria' : 'Nova Categoria'}
               </DialogTitle>
-              <DialogDescription>
-                {isEditing
-                  ? 'Atualize os detalhes da categoria abaixo.'
-                  : 'Preencha os detalhes da nova categoria abaixo.'}
-              </DialogDescription>
             </DialogHeader>
-            
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4 pt-2">
               <div className="space-y-2">
-                <label htmlFor="name" className="text-sm font-medium">Nome *</label>
+                <Label htmlFor="name">Nome da Categoria</Label>
                 <Input
                   id="name"
                   name="name"
-                  value={form.name}
-                  onChange={handleChange}
+                  value={formData.name}
+                  onChange={handleInputChange}
                   placeholder="Nome da categoria"
                   required
                 />
               </div>
               
               <div className="space-y-2">
-                <label htmlFor="description" className="text-sm font-medium">Descrição</label>
+                <Label htmlFor="description">Descrição</Label>
                 <Textarea
                   id="description"
                   name="description"
-                  value={form.description}
-                  onChange={handleChange}
-                  placeholder="Descrição da categoria (opcional)"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  placeholder="Descrição da categoria"
                   rows={3}
                 />
               </div>
               
               <div className="space-y-2">
-                <label htmlFor="image_url" className="text-sm font-medium">URL da Imagem</label>
+                <Label htmlFor="image_url">URL da imagem</Label>
                 <Input
                   id="image_url"
                   name="image_url"
-                  value={form.image_url}
-                  onChange={handleChange}
-                  placeholder="URL da imagem (opcional)"
+                  value={formData.image_url}
+                  onChange={handleInputChange}
+                  placeholder="https://"
                 />
               </div>
               
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setDialogOpen(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="submit"
-                  className="bg-carol-red hover:bg-carol-red/90"
-                >
-                  {isEditing ? 'Salvar alterações' : 'Criar categoria'}
+              <DialogFooter className="gap-2 sm:justify-end">
+                <DialogClose asChild>
+                  <Button type="button" variant="outline">
+                    Cancelar
+                  </Button>
+                </DialogClose>
+                <Button type="submit">
+                  {isEditing ? 'Atualizar' : 'Criar'}
                 </Button>
               </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
-      </div>
+      </main>
     </div>
   );
 };

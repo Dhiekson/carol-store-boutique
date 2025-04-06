@@ -37,13 +37,13 @@
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 0 0% 20%;
+    --sidebar-background: 0 0% 10%;
+    --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 350 80% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 350 80% 95%;
-    --sidebar-accent-foreground: 350 80% 35%;
-    --sidebar-border: 0 0% 90%;
+    --sidebar-accent: 350 80% 35%;
+    --sidebar-accent-foreground: 350 80% 95%;
+    --sidebar-border: 0 0% 20%;
     --sidebar-ring: 350 80% 55%;
   }
 
@@ -126,7 +126,7 @@
     @apply absolute -right-12 top-4 w-40 rotate-45 bg-carol-red py-1 text-center text-xs font-semibold uppercase text-white;
   }
 
-  /* Estilos femininos adicionais */
+  /* Estilos femininos com tema vermelho e preto */
   .feminine-heading {
     @apply font-playfair text-carol-red;
   }
@@ -140,7 +140,7 @@
   }
   
   .feminine-outline-button {
-    @apply border border-carol-red text-carol-red rounded-full px-6 py-2 hover:bg-pink-50 transition-all;
+    @apply border border-carol-red text-carol-red rounded-full px-6 py-2 hover:bg-carol-red/10 transition-all;
   }
   
   .gradient-text {
@@ -177,7 +177,7 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #222;
   border-radius: 4px;
 }
 

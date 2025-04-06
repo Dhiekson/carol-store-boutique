@@ -12,7 +12,8 @@ import {
   Truck,
   BarChart4,
   CreditCard,
-  Tags
+  Tags,
+  UserPlus
 } from 'lucide-react';
 
 const menuItems = [
@@ -42,6 +43,11 @@ const menuItems = [
     icon: <Users size={20} />,
   },
   {
+    title: 'Administradores',
+    href: '/admin/administradores',
+    icon: <UserPlus size={20} />,
+  },
+  {
     title: 'Frete',
     href: '/admin/frete',
     icon: <Truck size={20} />,
@@ -67,12 +73,12 @@ const AdminSidebar = () => {
   const location = useLocation();
   
   return (
-    <div className="flex flex-col h-full bg-white border-r fixed top-0 left-0 w-64 z-30">
-      <div className="p-4 border-b">
+    <div className="flex flex-col h-full bg-carol-black border-r border-carol-red/20 fixed top-0 left-0 w-64 z-30">
+      <div className="p-4 border-b border-carol-red/20">
         <Link to="/admin/dashboard" className="flex items-center">
           <h1 className="font-playfair font-bold text-xl text-carol-red">
-            Carol<span className="text-carol-black">Store</span>
-            <span className="text-xs ml-1 align-top">ADM</span>
+            Carol<span className="text-white">Store</span>
+            <span className="text-xs ml-1 align-top text-carol-red">ADM</span>
           </h1>
         </Link>
       </div>
@@ -86,8 +92,8 @@ const AdminSidebar = () => {
               className={cn(
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
                 location.pathname === item.href
-                  ? "bg-accent text-accent-foreground font-medium"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  ? "bg-carol-red text-white font-medium"
+                  : "text-gray-300 hover:bg-carol-red/10 hover:text-white"
               )}
             >
               {item.icon}
@@ -97,10 +103,10 @@ const AdminSidebar = () => {
         </nav>
       </div>
       
-      <div className="border-t p-4">
+      <div className="border-t border-carol-red/20 p-4">
         <Link
           to="/login"
-          className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 transition-colors w-full"
+          className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-carol-red hover:bg-carol-red/10 transition-colors w-full"
         >
           <LogOut size={20} />
           Sair

@@ -33,6 +33,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Set up auth listener first
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         async (event, currentSession) => {
+          console.log("Auth state changed:", event, currentSession?.user?.email);
           setSession(currentSession);
           setUser(currentSession?.user ?? null);
           
@@ -47,6 +48,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       // Then check for existing session
       const { data: { session: currentSession } } = await supabase.auth.getSession();
+      console.log("Current session:", currentSession?.user?.email);
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       
@@ -66,6 +68,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchProfile = async (userId: string) => {
     try {
+      console.log("Fetching profile for user:", userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -77,13 +80,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
       
+      console.log("Profile data:", data);
       setProfile(data as ProfileType);
       
-      // Se o perfil for de admin e estiver na página de login, redireciona para o dashboard
-      if (data && data.role === 'admin' && location.pathname === '/login') {
-        navigate('/admin/dashboard');
+      // Redirect logic based on role
+      if (data && data.role === 'admin') {
+        if (location.pathname === '/login') {
+          navigate('/admin/dashboard');
+        }
       } 
-      // Se tiver acabado de fazer login e não for admin, redireciona para a página inicial
+      // General redirect for regular users
       else if (location.pathname === '/login') {
         navigate('/');
       }
@@ -94,9 +100,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signIn = async (email: string, password: string) => {
     try {
+      console.log("Attempting login with:", email);
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       
       if (error) {
+        console.error("Login error:", error);
         toast({
           title: "Erro ao fazer login",
           description: error.message,
@@ -105,7 +113,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return { error };
       }
 
-      // O redirecionamento será feito no fetchProfile após o evento SIGNED_IN
       toast({
         title: "Login realizado com sucesso",
         description: "Bem-vindo(a) de volta!"
@@ -113,6 +120,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       return { error: null };
     } catch (error) {
+      console.error("Unexpected login error:", error);
       toast({
         title: "Erro ao fazer login",
         description: "Ocorreu um erro inesperado. Por favor, tente novamente.",

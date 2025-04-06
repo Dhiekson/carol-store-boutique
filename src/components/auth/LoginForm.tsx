@@ -26,19 +26,18 @@ const LoginForm = () => {
     setLoading(true);
     
     try {
+      console.log("Attempting login with:", email);
       const { error: signInError } = await signIn(email, password);
       
       if (signInError) {
         console.error('Erro de login:', signInError);
         setError(signInError.message || 'Falha no login. Verifique suas credenciais.');
       } else {
-        // Verificamos o perfil do usuário após login bem-sucedido
+        // Login successful - redirection happens in AuthContext
         toast({
           title: "Login realizado com sucesso",
           description: "Você está sendo redirecionado...",
         });
-        
-        // Redirecionamento ocorre no contexto de autenticação
       }
     } catch (err) {
       console.error('Erro durante login:', err);
@@ -114,6 +113,11 @@ const LoginForm = () => {
             "Entrar"
           )}
         </Button>
+        
+        <div className="text-center text-xs text-gray-500 border-t border-gray-100 pt-4 mt-4">
+          <p>Credenciais de administrador para teste:</p>
+          <p className="font-mono bg-gray-50 p-1 rounded mt-1">admin@carolstore.com / Admin123@</p>
+        </div>
       </form>
       
       <div className="mt-6 text-center">

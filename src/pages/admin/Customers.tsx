@@ -17,18 +17,22 @@ const Customers = () => {
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
+        console.log('Fetching customers...');
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
+          .eq('role', 'customer')
           .order('created_at', { ascending: false });
 
         if (error) {
+          console.error('Error fetching customers:', error);
           throw error;
         }
 
+        console.log('Customers data:', data);
         setCustomers(data || []);
       } catch (error) {
-        console.error('Erro ao carregar clientes:', error);
+        console.error('Error loading customers:', error);
         toast({
           title: "Erro ao carregar clientes",
           description: "Não foi possível carregar a lista de clientes.",
@@ -50,9 +54,12 @@ const Customers = () => {
   
   const filteredCustomers = customers.filter(customer => {
     const fullName = getFullName(customer).toLowerCase();
-    return fullName.includes(searchQuery.toLowerCase()) ||
-           (customer.email && customer.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-           (customer.city && customer.city.toLowerCase().includes(searchQuery.toLowerCase()));
+    const customerEmail = customer.email?.toLowerCase() || '';
+    const searchLower = searchQuery.toLowerCase();
+    
+    return fullName.includes(searchLower) || 
+           customerEmail.includes(searchLower) ||
+           (customer.city || '').toLowerCase().includes(searchLower);
   });
 
   return (
@@ -78,7 +85,7 @@ const Customers = () => {
         
         {loading ? (
           <div className="flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-carol-red"></div>
           </div>
         ) : filteredCustomers.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-lg shadow-sm">
@@ -135,7 +142,6 @@ const Customers = () => {
                   <Button 
                     variant="outline" 
                     className="w-full"
-                    disabled={true} // Será implementado no futuro
                   >
                     Ver detalhes
                   </Button>

@@ -8,14 +8,17 @@ import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   LineChart, BarChart, PieChart, Line, Bar, Pie,
-  CartesianGrid, XAxis, YAxis, Tooltip, Legend, Cell
+  CartesianGrid, XAxis, YAxis, Tooltip, Legend, Cell, ResponsiveContainer
 } from 'recharts';
 import { Download, Calendar as CalendarIcon, Filter } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
+import { useToast } from '@/components/ui/use-toast';
 
 const Reports = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [period, setPeriod] = useState('month');
+  const { toast } = useToast();
 
   // Dados de exemplo para os gráficos
   const salesData = [
@@ -37,70 +40,21 @@ const Reports = () => {
   ];
 
   const COLORS = ['#ea384c', '#ff6b81', '#c0142a', '#333333', '#f8f8f8'];
+  
+  const handleExport = () => {
+    toast({
+      title: "Relatório exportado",
+      description: "O relatório foi exportado com sucesso."
+    });
+  };
 
-  const CustomLineChart = () => (
-    <div className="h-[300px] w-full">
-      <div className="w-full h-full">
-        <LineChart
-          width={500}
-          height={300}
-          data={salesData}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="name" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Line type="monotone" dataKey="value" stroke="#ea384c" activeDot={{ r: 8 }} />
-        </LineChart>
-      </div>
-    </div>
-  );
-
-  const CustomBarChart = () => (
-    <div className="h-[300px] w-full">
-      <div className="w-full h-full">
-        <BarChart
-          width={500}
-          height={300}
-          data={salesData}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="name" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Bar dataKey="value" fill="#ea384c" />
-        </BarChart>
-      </div>
-    </div>
-  );
-
-  const CustomPieChart = () => (
-    <div className="h-[300px] w-full">
-      <div className="w-full h-full">
-        <PieChart
-          width={400}
-          height={300}
-        >
-          <Pie
-            data={categoryData}
-            cx="50%"
-            cy="50%"
-            outerRadius={100}
-            fill="#8884d8"
-            dataKey="value"
-            label
-          >
-            {categoryData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-            ))}
-          </Pie>
-          <Legend />
-        </PieChart>
-      </div>
-    </div>
-  );
+  const handleFilterChange = (value: string) => {
+    setPeriod(value);
+    toast({
+      title: "Período atualizado",
+      description: `Relatório filtrado por: ${value}`
+    });
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -127,7 +81,7 @@ const Reports = () => {
               </PopoverContent>
             </Popover>
 
-            <Select defaultValue="month">
+            <Select defaultValue={period} onValueChange={handleFilterChange}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Período" />
               </SelectTrigger>
@@ -144,7 +98,7 @@ const Reports = () => {
               Filtros
             </Button>
             
-            <Button>
+            <Button onClick={handleExport}>
               <Download className="h-4 w-4 mr-2" />
               Exportar
             </Button>
@@ -205,8 +159,26 @@ const Reports = () => {
                 <CardTitle>Relatório de Vendas</CardTitle>
                 <CardDescription>Análise de vendas ao longo do tempo</CardDescription>
               </CardHeader>
-              <CardContent>
-                <CustomLineChart />
+              <CardContent className="pt-4">
+                <div className="h-[400px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={salesData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Line 
+                        type="monotone" 
+                        dataKey="value" 
+                        stroke="#ea384c" 
+                        activeDot={{ r: 8 }} 
+                        strokeWidth={2} 
+                        name="Vendas (R$)"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -218,8 +190,28 @@ const Reports = () => {
                   <CardTitle>Vendas por Categoria</CardTitle>
                   <CardDescription>Distribuição de vendas por categoria de produto</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <CustomPieChart />
+                <CardContent className="pt-4">
+                  <div className="h-[400px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={categoryData}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={130}
+                          fill="#8884d8"
+                          dataKey="value"
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {categoryData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value) => `${value}%`} />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
                 </CardContent>
               </Card>
               
@@ -228,8 +220,23 @@ const Reports = () => {
                   <CardTitle>Produtos Mais Vendidos</CardTitle>
                   <CardDescription>Top produtos por quantidade vendida</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <CustomBarChart />
+                <CardContent className="pt-4">
+                  <div className="h-[400px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={salesData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar 
+                          dataKey="value" 
+                          fill="#ea384c" 
+                          name="Vendas"
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -241,8 +248,23 @@ const Reports = () => {
                 <CardTitle>Aquisição de Clientes</CardTitle>
                 <CardDescription>Novos clientes por mês</CardDescription>
               </CardHeader>
-              <CardContent>
-                <CustomBarChart />
+              <CardContent className="pt-4">
+                <div className="h-[400px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={salesData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar 
+                        dataKey="value" 
+                        fill="#ff6b81" 
+                        name="Novos Clientes"
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

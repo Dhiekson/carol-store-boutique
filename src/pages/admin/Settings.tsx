@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Sidebar from '@/components/admin/Sidebar';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,8 +9,28 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/components/ui/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { CreditCard, Truck } from 'lucide-react';
 
 const Settings = () => {
+  const { toast } = useToast();
+  const [paymentConfigOpen, setPaymentConfigOpen] = useState(false);
+  const [shippingConfigOpen, setShippingConfigOpen] = useState(false);
+
+  const handleSaveSettings = () => {
+    toast({
+      title: "Configurações salvas",
+      description: "As configurações foram atualizadas com sucesso."
+    });
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
@@ -90,7 +110,7 @@ const Settings = () => {
                   </div>
                 </CardContent>
                 <CardFooter className="justify-end">
-                  <Button>Salvar Alterações</Button>
+                  <Button onClick={handleSaveSettings}>Salvar Alterações</Button>
                 </CardFooter>
               </Card>
               
@@ -122,7 +142,7 @@ const Settings = () => {
                   </div>
                 </CardContent>
                 <CardFooter className="justify-end">
-                  <Button>Salvar Alterações</Button>
+                  <Button onClick={handleSaveSettings}>Salvar Alterações</Button>
                 </CardFooter>
               </Card>
             </div>
@@ -243,14 +263,14 @@ const Settings = () => {
                 <CardContent>
                   <div className="space-y-4">
                     <div className="flex items-center">
-                      <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center mr-3">
-                        <img src="/placeholder.svg" alt="Payment" className="h-6 w-6" />
+                      <div className="h-10 w-10 rounded-full bg-pink-100 flex items-center justify-center mr-3">
+                        <CreditCard className="h-6 w-6 text-pink-500" />
                       </div>
                       <div className="flex-grow">
                         <h3 className="font-medium">Provedor de Pagamento</h3>
                         <p className="text-sm text-muted-foreground">Conectado</p>
                       </div>
-                      <Button variant="outline">Configurar</Button>
+                      <Button variant="outline" onClick={() => setPaymentConfigOpen(true)}>Configurar</Button>
                     </div>
                   </div>
                 </CardContent>
@@ -265,13 +285,13 @@ const Settings = () => {
                   <div className="space-y-4">
                     <div className="flex items-center">
                       <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center mr-3">
-                        <img src="/placeholder.svg" alt="Shipping" className="h-6 w-6" />
+                        <Truck className="h-6 w-6 text-gray-500" />
                       </div>
                       <div className="flex-grow">
                         <h3 className="font-medium">Serviço de Frete</h3>
                         <p className="text-sm text-muted-foreground">Desconectado</p>
                       </div>
-                      <Button variant="outline">Conectar</Button>
+                      <Button variant="outline" onClick={() => setShippingConfigOpen(true)}>Conectar</Button>
                     </div>
                   </div>
                 </CardContent>
@@ -296,12 +316,136 @@ const Settings = () => {
                   </div>
                 </CardContent>
                 <CardFooter className="justify-end">
-                  <Button>Salvar Configurações</Button>
+                  <Button onClick={handleSaveSettings}>Salvar Configurações</Button>
                 </CardFooter>
               </Card>
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Diálogo de Configuração de Pagamentos */}
+        <Dialog open={paymentConfigOpen} onOpenChange={setPaymentConfigOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Configurar Integração de Pagamento</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="payment-provider">Provedor de Pagamento</Label>
+                <Select defaultValue="stripe">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um provedor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="stripe">Stripe</SelectItem>
+                    <SelectItem value="paypal">PayPal</SelectItem>
+                    <SelectItem value="mercadopago">MercadoPago</SelectItem>
+                    <SelectItem value="pagseguro">PagSeguro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="payment-api-key">Chave de API</Label>
+                <Input 
+                  id="payment-api-key" 
+                  placeholder="Sua chave de API" 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="payment-secret">Chave Secreta</Label>
+                <Input 
+                  id="payment-secret" 
+                  type="password"
+                  placeholder="Sua chave secreta" 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="payment-webhook">URL de Webhook</Label>
+                <Input 
+                  id="payment-webhook" 
+                  placeholder="https://sua-loja.com/webhook/pagamento" 
+                />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Switch id="payment-test-mode" />
+                  <Label htmlFor="payment-test-mode">Modo de Teste</Label>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  No modo de teste, as transações não serão reais.
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setPaymentConfigOpen(false)}>Cancelar</Button>
+              <Button onClick={() => {
+                setPaymentConfigOpen(false);
+                toast({
+                  title: "Integração configurada",
+                  description: "A integração de pagamento foi configurada com sucesso."
+                });
+              }}>Salvar Configurações</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Diálogo de Configuração de Frete */}
+        <Dialog open={shippingConfigOpen} onOpenChange={setShippingConfigOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Configurar Integração de Frete</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="shipping-provider">Provedor de Frete</Label>
+                <Select defaultValue="correios">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um provedor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="correios">Correios</SelectItem>
+                    <SelectItem value="jadlog">JadLog</SelectItem>
+                    <SelectItem value="fedex">FedEx</SelectItem>
+                    <SelectItem value="dhl">DHL</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="shipping-api-key">Chave de API</Label>
+                <Input 
+                  id="shipping-api-key" 
+                  placeholder="Sua chave de API" 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="shipping-contract">Número do Contrato</Label>
+                <Input 
+                  id="shipping-contract"
+                  placeholder="Número do contrato" 
+                />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Switch id="shipping-test-mode" />
+                  <Label htmlFor="shipping-test-mode">Modo de Teste</Label>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  No modo de teste, as cotações de frete não serão reais.
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShippingConfigOpen(false)}>Cancelar</Button>
+              <Button onClick={() => {
+                setShippingConfigOpen(false);
+                toast({
+                  title: "Integração configurada",
+                  description: "A integração de frete foi configurada com sucesso."
+                });
+              }}>Salvar Configurações</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );

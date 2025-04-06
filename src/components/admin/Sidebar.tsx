@@ -11,7 +11,8 @@ import {
   Package,
   Truck,
   BarChart4,
-  CreditCard
+  CreditCard,
+  Tags
 } from 'lucide-react';
 
 const menuItems = [
@@ -24,6 +25,11 @@ const menuItems = [
     title: 'Produtos',
     href: '/admin/produtos',
     icon: <ShoppingBag size={20} />,
+  },
+  {
+    title: 'Categorias',
+    href: '/admin/categorias',
+    icon: <Tags size={20} />,
   },
   {
     title: 'Pedidos',
@@ -61,7 +67,7 @@ const AdminSidebar = () => {
   const location = useLocation();
   
   return (
-    <div className="flex flex-col h-full bg-white border-r">
+    <div className="flex flex-col h-full bg-white border-r fixed top-0 left-0 w-64 z-30">
       <div className="p-4 border-b">
         <Link to="/admin/dashboard" className="flex items-center">
           <h1 className="font-playfair font-bold text-xl text-carol-red">

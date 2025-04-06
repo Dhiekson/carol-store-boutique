@@ -125,4 +125,67 @@
   .product-card-badge {
     @apply absolute -right-12 top-4 w-40 rotate-45 bg-carol-red py-1 text-center text-xs font-semibold uppercase text-white;
   }
+
+  /* Estilos femininos adicionais */
+  .feminine-heading {
+    @apply font-playfair text-carol-red;
+  }
+  
+  .feminine-card {
+    @apply border-t-4 border-carol-red rounded-lg shadow-md overflow-hidden transition-all hover:shadow-lg;
+  }
+  
+  .feminine-button {
+    @apply bg-carol-red text-white rounded-full px-6 py-2 hover:bg-carol-red/90 transition-all;
+  }
+  
+  .feminine-outline-button {
+    @apply border border-carol-red text-carol-red rounded-full px-6 py-2 hover:bg-pink-50 transition-all;
+  }
+  
+  .gradient-text {
+    @apply bg-gradient-to-r from-carol-red to-carol-red/70 bg-clip-text text-transparent;
+  }
+
+  /* Personalizações para o dashboard admin */
+  .admin-card {
+    @apply border-l-4 border-carol-red bg-white rounded-lg shadow-sm p-5;
+  }
+  
+  .admin-stat {
+    @apply text-2xl font-bold text-carol-black;
+  }
+  
+  .admin-card-title {
+    @apply font-medium text-carol-red mb-2;
+  }
+}
+
+/* Animações */
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(234, 56, 76, 0.4); }
+  50% { box-shadow: 0 0 0 10px rgba(234, 56, 76, 0); }
+}
+
+.pulse-animation {
+  animation: pulse-red 2s infinite;
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ea384c;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #c0142a;
 }

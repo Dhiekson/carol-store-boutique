@@ -3,7 +3,7 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
 import { useToast } from '@/components/ui/use-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ProfileType } from '@/integrations/supabase/db-types';
 
 interface AuthContextType {
@@ -26,22 +26,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const setupAuth = async () => {
       // Set up auth listener first
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        (event, currentSession) => {
+        async (event, currentSession) => {
           setSession(currentSession);
           setUser(currentSession?.user ?? null);
           
           if (event === 'SIGNED_OUT') {
             setProfile(null);
           } else if (event === 'SIGNED_IN' && currentSession?.user) {
-            // Fetch profile data on sign-in - use setTimeout to avoid deadlock
-            setTimeout(() => {
-              fetchProfile(currentSession.user.id);
-            }, 0);
+            // Fetch profile data on sign-in
+            await fetchProfile(currentSession.user.id);
           }
         }
       );
@@ -80,9 +79,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       setProfile(data as ProfileType);
       
-      // Se o perfil for de admin, redireciona para o dashboard
-      if (data && data.role === 'admin') {
+      // Se o perfil for de admin e estiver na página de login, redireciona para o dashboard
+      if (data && data.role === 'admin' && location.pathname === '/login') {
         navigate('/admin/dashboard');
+      } 
+      // Se tiver acabado de fazer login e não for admin, redireciona para a página inicial
+      else if (location.pathname === '/login') {
+        navigate('/');
       }
     } catch (err) {
       console.error('Error processing profile:', err);
@@ -102,7 +105,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return { error };
       }
 
-      // O redirecionamento acontecerá após busca do perfil
+      // O redirecionamento será feito no fetchProfile após o evento SIGNED_IN
       toast({
         title: "Login realizado com sucesso",
         description: "Bem-vindo(a) de volta!"
@@ -110,6 +113,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       return { error: null };
     } catch (error) {
+      toast({
+        title: "Erro ao fazer login",
+        description: "Ocorreu um erro inesperado. Por favor, tente novamente.",
+        variant: "destructive"
+      });
       return { error };
     }
   };
@@ -143,6 +151,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       return { error: null, data };
     } catch (error) {
+      toast({
+        title: "Erro ao criar conta",
+        description: "Ocorreu um erro inesperado. Por favor, tente novamente.",
+        variant: "destructive"
+      });
       return { error, data: null };
     }
   };
@@ -182,6 +195,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       return { error: null };
     } catch (error) {
+      toast({
+        title: "Erro ao atualizar perfil",
+        description: "Ocorreu um erro inesperado. Por favor, tente novamente.",
+        variant: "destructive"
+      });
       return { error };
     }
   };

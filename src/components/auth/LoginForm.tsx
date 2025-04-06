@@ -5,29 +5,44 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mail, Lock } from 'lucide-react';
+import { Mail, Lock, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/components/ui/use-toast';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError(null);
     setLoading(true);
     
     try {
-      const { error } = await signIn(email, password);
+      const { error: signInError } = await signIn(email, password);
       
-      if (!error) {
-        navigate(redirect);
+      if (signInError) {
+        console.error('Erro de login:', signInError);
+        setError(signInError.message || 'Falha no login. Verifique suas credenciais.');
+      } else {
+        // Verificamos o perfil do usuário após login bem-sucedido
+        toast({
+          title: "Login realizado com sucesso",
+          description: "Você está sendo redirecionado...",
+        });
+        
+        // Redirecionamento ocorre no contexto de autenticação
       }
-    } catch (error) {
-      console.error('Error during login:', error);
+    } catch (err) {
+      console.error('Erro durante login:', err);
+      setError('Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
     } finally {
       setLoading(false);
     }
@@ -39,6 +54,13 @@ const LoginForm = () => {
         <h1 className="font-playfair text-2xl font-bold mb-2">Bem-vindo(a) de volta!</h1>
         <p className="text-gray-600">Entre com seus dados para acessar sua conta</p>
       </div>
+      
+      {error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
       
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">

@@ -66,22 +66,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-    if (error) {
-      console.error('Error fetching profile:', error);
-    } else {
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return;
+      }
+      
       setProfile(data as ProfileType);
+      
+      // Se o perfil for de admin, redireciona para o dashboard
+      if (data && data.role === 'admin') {
+        navigate('/admin/dashboard');
+      }
+    } catch (err) {
+      console.error('Error processing profile:', err);
     }
   };
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       
       if (error) {
         toast({
@@ -92,12 +102,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return { error };
       }
 
+      // O redirecionamento acontecerá após busca do perfil
       toast({
         title: "Login realizado com sucesso",
         description: "Bem-vindo(a) de volta!"
       });
       
-      navigate('/');
       return { error: null };
     } catch (error) {
       return { error };

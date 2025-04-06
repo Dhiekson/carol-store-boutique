@@ -24,6 +24,11 @@ import OrderDetail from "./pages/OrderDetail";
 import AdminProducts from "./pages/admin/Products";
 import AdminOrders from "./pages/admin/Orders";
 import AdminCategories from "./pages/admin/Categories";
+import Customers from "./pages/admin/Customers";
+import Shipping from "./pages/admin/Shipping";
+import Payments from "./pages/admin/Payments";
+import Reports from "./pages/admin/Reports";
+import Settings from "./pages/admin/Settings";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +59,11 @@ const App = () => (
               <Route path="/admin/produtos" element={<AdminProducts />} />
               <Route path="/admin/pedidos" element={<AdminOrders />} />
               <Route path="/admin/categorias" element={<AdminCategories />} />
+              <Route path="/admin/clientes" element={<Customers />} />
+              <Route path="/admin/frete" element={<Shipping />} />
+              <Route path="/admin/pagamentos" element={<Payments />} />
+              <Route path="/admin/relatorios" element={<Reports />} />
+              <Route path="/admin/configuracoes" element={<Settings />} />
               
               {/* Catch-all route for 404 */}
               <Route path="*" element={<NotFound />} />

@@ -6,7 +6,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Line, Bar, Pie } from 'recharts';
+import { 
+  LineChart, BarChart, PieChart, Line, Bar, Pie,
+  CartesianGrid, XAxis, YAxis, Tooltip, Legend, Cell
+} from 'recharts';
 import { Download, Calendar as CalendarIcon, Filter } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
@@ -33,12 +36,15 @@ const Reports = () => {
     { name: 'Sapatos', value: 5 },
   ];
 
+  const COLORS = ['#ea384c', '#ff6b81', '#c0142a', '#333333', '#f8f8f8'];
+
   const CustomLineChart = () => (
     <div className="h-[300px] w-full">
       <div className="w-full h-full">
-        <Line
+        <LineChart
+          width={500}
+          height={300}
           data={salesData}
-          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
         >
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="name" />
@@ -46,7 +52,7 @@ const Reports = () => {
           <Tooltip />
           <Legend />
           <Line type="monotone" dataKey="value" stroke="#ea384c" activeDot={{ r: 8 }} />
-        </Line>
+        </LineChart>
       </div>
     </div>
   );
@@ -54,9 +60,10 @@ const Reports = () => {
   const CustomBarChart = () => (
     <div className="h-[300px] w-full">
       <div className="w-full h-full">
-        <Bar
+        <BarChart
+          width={500}
+          height={300}
           data={salesData}
-          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
         >
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="name" />
@@ -64,7 +71,7 @@ const Reports = () => {
           <Tooltip />
           <Legend />
           <Bar dataKey="value" fill="#ea384c" />
-        </Bar>
+        </BarChart>
       </div>
     </div>
   );
@@ -72,28 +79,28 @@ const Reports = () => {
   const CustomPieChart = () => (
     <div className="h-[300px] w-full">
       <div className="w-full h-full">
-        <Pie
-          data={categoryData}
-          cx="50%"
-          cy="50%"
-          outerRadius={100}
-          fill="#8884d8"
-          dataKey="value"
-          label
+        <PieChart
+          width={400}
+          height={300}
         >
-          {categoryData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-          ))}
-        </Pie>
-        <Legend />
+          <Pie
+            data={categoryData}
+            cx="50%"
+            cy="50%"
+            outerRadius={100}
+            fill="#8884d8"
+            dataKey="value"
+            label
+          >
+            {categoryData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            ))}
+          </Pie>
+          <Legend />
+        </PieChart>
       </div>
     </div>
   );
-
-  const COLORS = ['#ea384c', '#ff6b81', '#c0142a', '#333333', '#f8f8f8'];
-
-  // Import required components from recharts
-  const { CartesianGrid, XAxis, YAxis, Tooltip, Legend, Cell } = recharts;
 
   return (
     <div className="flex min-h-screen bg-gray-50">

@@ -187,6 +187,7 @@ export interface Database {
           id: string
           first_name: string | null
           last_name: string | null
+          email: string | null
           phone: string | null
           address: string | null
           city: string | null
@@ -200,6 +201,7 @@ export interface Database {
           id: string
           first_name?: string | null
           last_name?: string | null
+          email?: string | null
           phone?: string | null
           address?: string | null
           city?: string | null
@@ -213,6 +215,7 @@ export interface Database {
           id?: string
           first_name?: string | null
           last_name?: string | null
+          email?: string | null
           phone?: string | null
           address?: string | null
           city?: string | null

@@ -3,19 +3,13 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/components/ui/use-toast';
+import { ShoppingCartWithProduct, ProductType } from '@/integrations/supabase/db-types';
 
 interface CartItem {
   id: string;
   product_id: string;
   quantity: number;
-  product: {
-    id: string;
-    name: string;
-    price: number;
-    discount_price?: number;
-    image_url?: string;
-    category: string;
-  };
+  product: ProductType;
 }
 
 interface CartContextType {

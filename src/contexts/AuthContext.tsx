@@ -15,6 +15,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, userData: any) => Promise<{ error: any, data: any }>;
   signOut: () => Promise<void>;
   updateProfile: (data: any) => Promise<{ error: any }>;
+  updateAccountSettings: (settings: any) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -126,7 +127,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         description: "Bem-vindo(a) de volta!"
       });
       
-      // Redirect will happen in fetchProfile when the onAuthStateChange fires
+      // Fetch profile after successful login
+      if (data.user) {
+        await fetchProfile(data.user.id);
+      }
+      
       return { error: null };
     } catch (error) {
       console.error("Unexpected login error:", error);
@@ -229,6 +234,46 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const updateAccountSettings = async (settings: any) => {
+    if (!user) return { error: new Error('Usuário não autenticado') };
+
+    try {
+      // Update user settings in the profile
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          preferences: settings
+        })
+        .eq('id', user.id);
+
+      if (error) {
+        toast({
+          title: "Erro ao atualizar configurações",
+          description: error.message,
+          variant: "destructive"
+        });
+        return { error };
+      }
+
+      // Refresh profile data
+      await fetchProfile(user.id);
+      
+      toast({
+        title: "Configurações atualizadas",
+        description: "Suas preferências foram salvas com sucesso."
+      });
+      
+      return { error: null };
+    } catch (error) {
+      toast({
+        title: "Erro ao atualizar configurações",
+        description: "Ocorreu um erro inesperado. Por favor, tente novamente.",
+        variant: "destructive"
+      });
+      return { error };
+    }
+  };
+
   const value = {
     user,
     session,
@@ -237,7 +282,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signIn,
     signUp,
     signOut,
-    updateProfile
+    updateProfile,
+    updateAccountSettings
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

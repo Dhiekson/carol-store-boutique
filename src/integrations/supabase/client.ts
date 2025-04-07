@@ -18,3 +18,68 @@ export const supabase = createClient<Database>(
     }
   }
 );
+
+// Add a helper function to create the admin user if it doesn't exist
+export const ensureAdminUser = async () => {
+  try {
+    // First check if admin exists
+    const { data: existingUser, error: checkError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', 'admin@carolstore.com')
+      .single();
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error("Error checking admin user:", checkError);
+      return;
+    }
+
+    // If admin doesn't exist, create it
+    if (!existingUser) {
+      console.log("Creating admin user...");
+      
+      // Create admin user in auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: 'admin@carolstore.com',
+        password: 'Admin123@',
+        options: {
+          data: {
+            first_name: 'Admin',
+            last_name: 'User'
+          }
+        }
+      });
+
+      if (authError) {
+        console.error("Failed to create admin auth user:", authError);
+        return;
+      }
+
+      if (authData?.user) {
+        // Update the profile to make it an admin
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ 
+            email: 'admin@carolstore.com',
+            first_name: 'Admin',
+            last_name: 'User',
+            role: 'admin'
+          })
+          .eq('id', authData.user.id);
+
+        if (profileError) {
+          console.error("Failed to update admin profile:", profileError);
+        } else {
+          console.log("Admin user created successfully!");
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Error in ensureAdminUser:", err);
+  }
+};
+
+// Run this once on the client side
+if (typeof window !== 'undefined') {
+  ensureAdminUser();
+}

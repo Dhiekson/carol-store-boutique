@@ -30,6 +30,8 @@ import Payments from "./pages/admin/Payments";
 import Reports from "./pages/admin/Reports";
 import Settings from "./pages/admin/Settings";
 import Administrators from "./pages/admin/Administrators";
+import ProductForm from "./pages/admin/ProductForm";
+import CreateAdmin from "./pages/admin/CreateAdmin";
 
 const queryClient = new QueryClient();
 
@@ -58,10 +60,13 @@ const App = () => (
               {/* Admin Routes */}
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin/produtos" element={<AdminProducts />} />
+              <Route path="/admin/produtos/novo" element={<ProductForm />} />
+              <Route path="/admin/produtos/:id" element={<ProductForm />} />
               <Route path="/admin/pedidos" element={<AdminOrders />} />
               <Route path="/admin/categorias" element={<AdminCategories />} />
               <Route path="/admin/clientes" element={<Customers />} />
               <Route path="/admin/administradores" element={<Administrators />} />
+              <Route path="/admin/administradores/novo" element={<CreateAdmin />} />
               <Route path="/admin/frete" element={<Shipping />} />
               <Route path="/admin/pagamentos" element={<Payments />} />
               <Route path="/admin/relatorios" element={<Reports />} />

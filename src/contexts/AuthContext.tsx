@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         // Set up auth listener first
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          async (event, currentSession) => {
+          (event, currentSession) => {
             console.log("Auth state changed:", event, currentSession?.user?.email);
             setSession(currentSession);
             setUser(currentSession?.user ?? null);
@@ -90,15 +90,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("Profile data:", data);
       setProfile(data as ProfileType);
       
-      // Redirect logic based on role
-      if (data && data.role === 'admin') {
+      // Handle redirect based on user role and current page
+      if (data) {
+        // If we're on login page, redirect to appropriate page
         if (location.pathname === '/login') {
-          navigate('/admin/dashboard');
+          if (data.role === 'admin') {
+            navigate('/admin/dashboard');
+          } else {
+            navigate('/');
+          }
         }
-      } 
-      // General redirect for regular users
-      else if (location.pathname === '/login') {
-        navigate('/');
       }
     } catch (err) {
       console.error('Error processing profile:', err);

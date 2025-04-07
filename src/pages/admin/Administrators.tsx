@@ -5,7 +5,7 @@ import { ProfileType } from '@/integrations/supabase/db-types';
 import Sidebar from '@/components/admin/Sidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, User, Mail, Shield, X, Check } from 'lucide-react';
+import { Search, User, Mail, Shield, X, Check, Menu } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { 
   Dialog, 
@@ -16,7 +16,9 @@ import {
   DialogFooter,
   DialogClose
 } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Administrators = () => {
   const [admins, setAdmins] = useState<ProfileType[]>([]);
@@ -31,6 +33,7 @@ const Administrators = () => {
   });
   const [creatingAdmin, setCreatingAdmin] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     fetchAdmins();
@@ -81,19 +84,13 @@ const Administrators = () => {
       // 1. Create the user in auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: newAdmin.email,
-        password: newAdmin.password,
-        options: {
-          data: {
-            first_name: newAdmin.firstName,
-            last_name: newAdmin.lastName
-          }
-        }
+        password: newAdmin.password
       });
 
       if (authError) throw authError;
       
-      // 2. Update the profile to be admin
-      if (authData.user) {
+      // 2. Update the profile to be admin if user was created
+      if (authData && authData.user) {
         const { error: updateError } = await supabase
           .from('profiles')
           .update({ 
@@ -115,6 +112,8 @@ const Administrators = () => {
         setNewAdmin({ email: '', password: '', firstName: '', lastName: '' });
         setDialogOpen(false);
         fetchAdmins();
+      } else {
+        throw new Error("Não foi possível criar o usuário");
       }
     } catch (error: any) {
       console.error('Error creating admin:', error);
@@ -149,18 +148,32 @@ const Administrators = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      <main className="flex-grow p-8 ml-64">
+      {isMobile ? (
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" className="fixed top-4 left-4 z-40">
+              <Menu className="h-6 w-6" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="p-0 w-64">
+            <Sidebar />
+          </SheetContent>
+        </Sheet>
+      ) : (
+        <Sidebar />
+      )}
+      
+      <main className={`flex-grow p-4 sm:p-8 ${isMobile ? 'ml-0' : 'ml-64'} pt-16 sm:pt-8`}>
         <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <h1 className="text-2xl font-bold">Administradores</h1>
           
-          <div className="flex items-center gap-4">
-            <div className="relative">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="relative w-full sm:w-auto">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input 
                 type="search" 
                 placeholder="Buscar administradores..." 
-                className="pl-9 w-full md:w-auto min-w-[250px]"
+                className="pl-9 w-full sm:w-auto min-w-[200px]"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -168,7 +181,7 @@ const Administrators = () => {
             
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="default" className="bg-carol-red hover:bg-carol-red/90">
+                <Button variant="default" className="bg-carol-red hover:bg-carol-red/90 w-full sm:w-auto">
                   <User className="h-4 w-4 mr-2" />
                   Novo Administrador
                 </Button>
@@ -203,7 +216,7 @@ const Administrators = () => {
                     />
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="firstName">Nome *</Label>
                       <Input 

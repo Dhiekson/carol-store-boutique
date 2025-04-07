@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, User, Settings, Heart } from 'lucide-react';
+import { ShoppingBag, User, Settings, Heart, ArrowRight } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AccountSettings from '@/components/user/AccountSettings';
 
@@ -74,11 +74,11 @@ const UserProfile = () => {
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
-        <div className="flex-grow flex items-center justify-center">
-          <div className="text-center">
+        <div className="flex-grow flex items-center justify-center px-4">
+          <div className="text-center max-w-md">
             <h1 className="text-2xl mb-4">Você precisa estar logado para acessar esta página</h1>
             <Button asChild className="bg-carol-red hover:bg-carol-red/90">
-              <Link to="/login">Fazer login</Link>
+              <Link to="/login">Fazer login <ArrowRight className="ml-2 h-4 w-4" /></Link>
             </Button>
           </div>
         </div>
@@ -101,8 +101,8 @@ const UserProfile = () => {
               <div className="md:col-span-1">
                 <div className="bg-white rounded-lg shadow-sm border p-6">
                   <div className="flex flex-col items-center">
-                    <div className="bg-pink-50 h-20 w-20 rounded-full flex items-center justify-center mb-4">
-                      <User className="h-10 w-10 text-pink-400" />
+                    <div className="bg-carol-red/10 h-20 w-20 rounded-full flex items-center justify-center mb-4">
+                      <User className="h-10 w-10 text-carol-red" />
                     </div>
                     <h2 className="font-medium text-lg">
                       {profile?.first_name} {profile?.last_name}
@@ -119,7 +119,7 @@ const UserProfile = () => {
                       </Link>
                       <Link
                         to="/perfil"
-                        className="w-full flex items-center justify-center gap-2 py-2 bg-pink-100 text-pink-700 rounded-md hover:bg-pink-200 transition-colors"
+                        className="w-full flex items-center justify-center gap-2 py-2 bg-carol-red/10 text-carol-red rounded-md hover:bg-carol-red/20 transition-colors"
                       >
                         <Settings className="h-4 w-4" />
                         Configurações
@@ -138,13 +138,13 @@ const UserProfile = () => {
               
               <div className="md:col-span-2">
                 <Tabs defaultValue="personal">
-                  <TabsList className="mb-4">
+                  <TabsList className="mb-4 w-full overflow-x-auto">
                     <TabsTrigger value="personal">Dados Pessoais</TabsTrigger>
                     <TabsTrigger value="settings">Configurações</TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="personal">
-                    <div className="bg-white rounded-lg shadow-sm border p-6">
+                    <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
                       <h2 className="font-semibold text-xl mb-4">Informações Pessoais</h2>
                       
                       <form onSubmit={handleSubmit} className="space-y-4">
@@ -195,7 +195,7 @@ const UserProfile = () => {
                           />
                         </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor="city">Cidade</Label>
                             <Input
@@ -232,7 +232,7 @@ const UserProfile = () => {
                         
                         <Button
                           type="submit"
-                          className="w-full md:w-auto bg-carol-red hover:bg-carol-red/90 text-white"
+                          className="w-full sm:w-auto bg-carol-red hover:bg-carol-red/90 text-white"
                           disabled={loading}
                         >
                           {loading ? (

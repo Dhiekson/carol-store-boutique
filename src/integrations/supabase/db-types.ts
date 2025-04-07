@@ -91,6 +91,11 @@ export interface CartItemType {
   product?: ProductType;
 }
 
+// Added this type for the CartContext
+export interface ShoppingCartWithProduct extends CartItemType {
+  product: ProductType;
+}
+
 export interface ContactMessageType {
   id: string;
   name: string;

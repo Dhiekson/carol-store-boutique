@@ -30,6 +30,7 @@ const Administrators = () => {
     lastName: '',
   });
   const [creatingAdmin, setCreatingAdmin] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchAdmins();
@@ -38,6 +39,7 @@ const Administrators = () => {
   const fetchAdmins = async () => {
     try {
       console.log('Fetching administrators...');
+      setLoading(true);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -97,7 +99,8 @@ const Administrators = () => {
           .update({ 
             role: 'admin',
             first_name: newAdmin.firstName,
-            last_name: newAdmin.lastName
+            last_name: newAdmin.lastName,
+            email: newAdmin.email
           })
           .eq('id', authData.user.id);
 
@@ -110,6 +113,7 @@ const Administrators = () => {
         
         // Reset form and refresh list
         setNewAdmin({ email: '', password: '', firstName: '', lastName: '' });
+        setDialogOpen(false);
         fetchAdmins();
       }
     } catch (error: any) {
@@ -162,7 +166,7 @@ const Administrators = () => {
               />
             </div>
             
-            <Dialog>
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="default" className="bg-carol-red hover:bg-carol-red/90">
                   <User className="h-4 w-4 mr-2" />
@@ -225,12 +229,10 @@ const Administrators = () => {
                 </div>
                 
                 <DialogFooter>
-                  <DialogClose asChild>
-                    <Button variant="outline" className="mr-2">
-                      <X className="h-4 w-4 mr-2" />
-                      Cancelar
-                    </Button>
-                  </DialogClose>
+                  <Button variant="outline" className="mr-2" onClick={() => setDialogOpen(false)}>
+                    <X className="h-4 w-4 mr-2" />
+                    Cancelar
+                  </Button>
                   <Button 
                     onClick={createAdmin} 
                     disabled={creatingAdmin}
@@ -265,17 +267,10 @@ const Administrators = () => {
             <p className="text-gray-500 mb-6">
               {searchQuery ? 'Nenhum administrador corresponde à sua pesquisa.' : 'Não há administradores cadastrados ainda.'}
             </p>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="default" className="bg-carol-red hover:bg-carol-red/90">
-                  <User className="h-4 w-4 mr-2" />
-                  Adicionar Administrador
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                {/* Dialog content from above */}
-              </DialogContent>
-            </Dialog>
+            <Button variant="default" className="bg-carol-red hover:bg-carol-red/90" onClick={() => setDialogOpen(true)}>
+              <User className="h-4 w-4 mr-2" />
+              Adicionar Administrador
+            </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

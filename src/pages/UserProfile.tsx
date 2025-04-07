@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { Link } from 'react-router-dom';
 import { ShoppingBag, User, Settings, Heart } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import AccountSettings from '@/components/user/AccountSettings';
 
 const UserProfile = () => {
   const { user, profile, updateProfile } = useAuth();
@@ -68,6 +70,23 @@ const UserProfile = () => {
     }
   };
   
+  if (!user) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <div className="flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl mb-4">Você precisa estar logado para acessar esta página</h1>
+            <Button asChild className="bg-carol-red hover:bg-carol-red/90">
+              <Link to="/login">Fazer login</Link>
+            </Button>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+  
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -118,108 +137,121 @@ const UserProfile = () => {
               </div>
               
               <div className="md:col-span-2">
-                <div className="bg-white rounded-lg shadow-sm border p-6">
-                  <h2 className="font-semibold text-xl mb-4">Informações Pessoais</h2>
+                <Tabs defaultValue="personal">
+                  <TabsList className="mb-4">
+                    <TabsTrigger value="personal">Dados Pessoais</TabsTrigger>
+                    <TabsTrigger value="settings">Configurações</TabsTrigger>
+                  </TabsList>
                   
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="first_name">Nome</Label>
-                        <Input
-                          id="first_name"
-                          name="first_name"
-                          value={formData.first_name}
-                          onChange={handleChange}
-                          placeholder="Nome"
-                        />
-                      </div>
+                  <TabsContent value="personal">
+                    <div className="bg-white rounded-lg shadow-sm border p-6">
+                      <h2 className="font-semibold text-xl mb-4">Informações Pessoais</h2>
                       
-                      <div className="space-y-2">
-                        <Label htmlFor="last_name">Sobrenome</Label>
-                        <Input
-                          id="last_name"
-                          name="last_name"
-                          value={formData.last_name}
-                          onChange={handleChange}
-                          placeholder="Sobrenome"
-                        />
-                      </div>
+                      <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="first_name">Nome</Label>
+                            <Input
+                              id="first_name"
+                              name="first_name"
+                              value={formData.first_name}
+                              onChange={handleChange}
+                              placeholder="Nome"
+                            />
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="last_name">Sobrenome</Label>
+                            <Input
+                              id="last_name"
+                              name="last_name"
+                              value={formData.last_name}
+                              onChange={handleChange}
+                              placeholder="Sobrenome"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="phone">Telefone</Label>
+                          <Input
+                            id="phone"
+                            name="phone"
+                            type="tel"
+                            value={formData.phone}
+                            onChange={handleChange}
+                            placeholder="(00) 00000-0000"
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="address">Endereço</Label>
+                          <Input
+                            id="address"
+                            name="address"
+                            value={formData.address}
+                            onChange={handleChange}
+                            placeholder="Rua, número, complemento"
+                          />
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="city">Cidade</Label>
+                            <Input
+                              id="city"
+                              name="city"
+                              value={formData.city}
+                              onChange={handleChange}
+                              placeholder="Cidade"
+                            />
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="state">Estado</Label>
+                            <Input
+                              id="state"
+                              name="state"
+                              value={formData.state}
+                              onChange={handleChange}
+                              placeholder="Estado"
+                            />
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="zip_code">CEP</Label>
+                            <Input
+                              id="zip_code"
+                              name="zip_code"
+                              value={formData.zip_code}
+                              onChange={handleChange}
+                              placeholder="00000-000"
+                            />
+                          </div>
+                        </div>
+                        
+                        <Button
+                          type="submit"
+                          className="w-full md:w-auto bg-carol-red hover:bg-carol-red/90 text-white"
+                          disabled={loading}
+                        >
+                          {loading ? (
+                            <span className="flex items-center">
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Salvando...
+                            </span>
+                          ) : (
+                            "Salvar alterações"
+                          )}
+                        </Button>
+                      </form>
                     </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Telefone</Label>
-                      <Input
-                        id="phone"
-                        name="phone"
-                        type="tel"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        placeholder="(00) 00000-0000"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="address">Endereço</Label>
-                      <Input
-                        id="address"
-                        name="address"
-                        value={formData.address}
-                        onChange={handleChange}
-                        placeholder="Rua, número, complemento"
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="city">Cidade</Label>
-                        <Input
-                          id="city"
-                          name="city"
-                          value={formData.city}
-                          onChange={handleChange}
-                          placeholder="Cidade"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="state">Estado</Label>
-                        <Input
-                          id="state"
-                          name="state"
-                          value={formData.state}
-                          onChange={handleChange}
-                          placeholder="Estado"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="zip_code">CEP</Label>
-                        <Input
-                          id="zip_code"
-                          name="zip_code"
-                          value={formData.zip_code}
-                          onChange={handleChange}
-                          placeholder="00000-000"
-                        />
-                      </div>
-                    </div>
-                    
-                    <Button
-                      type="submit"
-                      className="w-full md:w-auto bg-pink-500 hover:bg-pink-600 text-white"
-                      disabled={loading}
-                    >
-                      {loading ? (
-                        <span className="flex items-center">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Salvando...
-                        </span>
-                      ) : (
-                        "Salvar alterações"
-                      )}
-                    </Button>
-                  </form>
-                </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="settings">
+                    <AccountSettings />
+                  </TabsContent>
+                </Tabs>
               </div>
             </div>
           </div>

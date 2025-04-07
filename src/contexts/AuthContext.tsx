@@ -30,37 +30,44 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const setupAuth = async () => {
-      // Set up auth listener first
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        async (event, currentSession) => {
-          console.log("Auth state changed:", event, currentSession?.user?.email);
-          setSession(currentSession);
-          setUser(currentSession?.user ?? null);
-          
-          if (event === 'SIGNED_OUT') {
-            setProfile(null);
-          } else if (event === 'SIGNED_IN' && currentSession?.user) {
-            // Fetch profile data on sign-in
-            await fetchProfile(currentSession.user.id);
+      try {
+        // Set up auth listener first
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event, currentSession) => {
+            console.log("Auth state changed:", event, currentSession?.user?.email);
+            setSession(currentSession);
+            setUser(currentSession?.user ?? null);
+            
+            if (event === 'SIGNED_OUT') {
+              setProfile(null);
+            } else if (event === 'SIGNED_IN' && currentSession?.user) {
+              // Fetch profile data on sign-in
+              setTimeout(() => {
+                fetchProfile(currentSession.user.id);
+              }, 0);
+            }
           }
+        );
+        
+        // Then check for existing session
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        console.log("Current session:", currentSession?.user?.email);
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+        
+        if (currentSession?.user) {
+          await fetchProfile(currentSession.user.id);
         }
-      );
-      
-      // Then check for existing session
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      console.log("Current session:", currentSession?.user?.email);
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      
-      if (currentSession?.user) {
-        await fetchProfile(currentSession.user.id);
+        
+        setIsLoading(false);
+        
+        return () => {
+          subscription.unsubscribe();
+        };
+      } catch (error) {
+        console.error("Auth setup error:", error);
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
-      
-      return () => {
-        subscription.unsubscribe();
-      };
     };
 
     setupAuth();
@@ -118,6 +125,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         description: "Bem-vindo(a) de volta!"
       });
       
+      // Redirect will happen in fetchProfile when the onAuthStateChange fires
       return { error: null };
     } catch (error) {
       console.error("Unexpected login error:", error);
@@ -150,6 +158,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           variant: "destructive"
         });
         return { error, data: null };
+      }
+
+      // Also update the profiles table to include the email
+      if (data.user) {
+        await supabase
+          .from('profiles')
+          .update({ email: email })
+          .eq('id', data.user.id);
       }
 
       toast({

@@ -1,7 +1,8 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   LayoutDashboard, 
   ShoppingBag, 
@@ -71,6 +72,13 @@ const menuItems = [
 
 const AdminSidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { signOut, profile } = useAuth();
+  
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/login');
+  };
   
   return (
     <div className="flex flex-col h-full bg-carol-black border-r border-carol-red/20 fixed top-0 left-0 w-64 z-30">
@@ -82,6 +90,13 @@ const AdminSidebar = () => {
           </h1>
         </Link>
       </div>
+      
+      {profile && (
+        <div className="px-4 py-3 border-b border-carol-red/20">
+          <p className="text-sm text-gray-400">Conectado como</p>
+          <p className="text-white font-medium truncate">{profile.first_name} {profile.last_name}</p>
+        </div>
+      )}
       
       <div className="flex-1 overflow-auto py-4 px-2">
         <nav className="space-y-1">
@@ -104,13 +119,13 @@ const AdminSidebar = () => {
       </div>
       
       <div className="border-t border-carol-red/20 p-4">
-        <Link
-          to="/login"
+        <button
+          onClick={handleLogout}
           className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-carol-red hover:bg-carol-red/10 transition-colors w-full"
         >
           <LogOut size={20} />
           Sair
-        </Link>
+        </button>
       </div>
     </div>
   );

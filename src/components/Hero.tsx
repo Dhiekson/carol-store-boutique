@@ -34,9 +34,8 @@ const Hero = () => {
               </Link>
             </Button>
             <Button 
-              variant="outline" 
               size="lg" 
-              className="border-carol-red text-white hover:bg-carol-red/10 btn-hover"
+              className="bg-carol-red hover:bg-carol-red/90 text-white btn-hover"
               asChild
             >
               <Link to="/produtos/destaque">

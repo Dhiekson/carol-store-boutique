@@ -1,15 +1,36 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, User, Menu, X, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { 
+  ShoppingCart, 
+  User, 
+  Menu, 
+  X, 
+  Search, 
+  LogOut,
+  UserCircle
+} from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/contexts/AuthContext';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const isMobile = useIsMobile();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, profile, signOut } = useAuth();
   
   const isActive = (path: string) => location.pathname === path;
   
@@ -27,6 +48,18 @@ const Navbar = () => {
   useEffect(() => {
     setIsMenuOpen(false);
   }, [location.pathname]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/produtos?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/login');
+  };
   
   const links = [
     { name: 'Início', path: '/' },
@@ -68,26 +101,88 @@ const Navbar = () => {
           
           {/* Action Buttons */}
           <div className="flex items-center space-x-2">
+            <form onSubmit={handleSearch} className="relative hidden md:block">
+              <Input 
+                type="text"
+                placeholder="Buscar produtos..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-40 lg:w-60 pl-8 h-9"
+              />
+              <Button 
+                type="submit" 
+                size="icon" 
+                variant="ghost" 
+                className="absolute left-0 top-0 h-9 w-9 hover:bg-transparent"
+              >
+                <Search size={16} className="text-gray-500" />
+              </Button>
+            </form>
+
             <Button
               variant="ghost"
               size="icon"
-              className="text-carol-black hover:text-carol-red hover:bg-accent/50"
+              onClick={() => navigate('/produtos?search=' + encodeURIComponent(searchQuery))}
+              className="text-carol-black hover:text-carol-red hover:bg-accent/50 md:hidden"
               aria-label="Pesquisar"
             >
               <Search size={20} />
             </Button>
             
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-carol-black hover:text-carol-red hover:bg-accent/50"
-              aria-label="Minha conta"
-              asChild
-            >
-              <Link to="/login">
-                <User size={20} />
-              </Link>
-            </Button>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-carol-black hover:text-carol-red hover:bg-accent/50 relative"
+                    aria-label="Minha conta"
+                  >
+                    <UserCircle size={20} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuLabel>
+                    {profile?.first_name ? `Olá, ${profile.first_name}` : 'Minha conta'}
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {profile?.role === 'admin' && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin/dashboard" className="w-full cursor-pointer">
+                        Painel do Admin
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem asChild>
+                    <Link to="/perfil" className="w-full cursor-pointer">
+                      Meu Perfil
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/meus-pedidos" className="w-full cursor-pointer">
+                      Meus Pedidos
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-600 cursor-pointer">
+                    <LogOut size={16} className="mr-2" />
+                    Sair
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-carol-black hover:text-carol-red hover:bg-accent/50"
+                aria-label="Minha conta"
+                asChild
+              >
+                <Link to="/login">
+                  <User size={20} />
+                </Link>
+              </Button>
+            )}
             
             <Button
               variant="ghost"
@@ -118,6 +213,24 @@ const Navbar = () => {
           </div>
         </div>
         
+        {/* Mobile Search (shown when menu is open) */}
+        {isMobile && isMenuOpen && (
+          <div className="mt-4 mb-2">
+            <form onSubmit={handleSearch} className="flex gap-2">
+              <Input 
+                type="text"
+                placeholder="Buscar produtos..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-grow"
+              />
+              <Button type="submit">
+                <Search size={16} />
+              </Button>
+            </form>
+          </div>
+        )}
+        
         {/* Mobile Menu */}
         {isMobile && isMenuOpen && (
           <nav className="md:hidden py-4 animate-fade-in">
@@ -135,6 +248,48 @@ const Navbar = () => {
                   </Link>
                 </li>
               ))}
+              
+              {user && (
+                <>
+                  <li>
+                    <Link
+                      to="/perfil"
+                      className="block px-2 py-1 text-lg font-medium text-carol-black"
+                      onClick={toggleMenu}
+                    >
+                      Meu Perfil
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="/meus-pedidos"
+                      className="block px-2 py-1 text-lg font-medium text-carol-black"
+                      onClick={toggleMenu}
+                    >
+                      Meus Pedidos
+                    </Link>
+                  </li>
+                  {profile?.role === 'admin' && (
+                    <li>
+                      <Link
+                        to="/admin/dashboard"
+                        className="block px-2 py-1 text-lg font-medium text-carol-black"
+                        onClick={toggleMenu}
+                      >
+                        Painel do Admin
+                      </Link>
+                    </li>
+                  )}
+                  <li>
+                    <button
+                      onClick={handleLogout}
+                      className="block px-2 py-1 text-lg font-medium text-carol-red flex items-center gap-2"
+                    >
+                      <LogOut size={18} /> Sair
+                    </button>
+                  </li>
+                </>
+              )}
             </ul>
           </nav>
         )}

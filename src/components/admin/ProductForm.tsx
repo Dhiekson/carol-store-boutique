@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import { CategoryType } from '@/integrations/supabase/db-types';
-import { Plus, Loader2, ImagePlus } from 'lucide-react';
+import { Plus, Loader2, ImagePlus, Upload } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
 import {
   Select,
   SelectContent,
@@ -24,7 +25,10 @@ interface ProductFormProps {
 
 const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
   const [loading, setLoading] = useState<boolean>(false);
+  const [uploadingImage, setUploadingImage] = useState<boolean>(false);
   const [categories, setCategories] = useState<CategoryType[]>([]);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -38,6 +42,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const isEditing = Boolean(productId);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -83,6 +88,10 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
             subcategory: data.subcategory || '',
             image_url: data.image_url || '',
           });
+          
+          if (data.image_url) {
+            setImagePreview(data.image_url);
+          }
         }
       } catch (error) {
         console.error("Error fetching product:", error);
@@ -109,11 +118,76 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
     setFormData(prev => ({ ...prev, category: value }));
   };
 
+  const handleImageSelect = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Preview the image
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+    
+    setImageFile(file);
+    // Clear the URL input as we're using a file now
+    setFormData(prev => ({ ...prev, image_url: '' }));
+  };
+
+  const uploadImage = async () => {
+    if (!imageFile) return null;
+    
+    try {
+      setUploadingImage(true);
+      
+      // Generate a unique file path
+      const fileName = `${uuidv4()}-${imageFile.name.replace(/\s/g, '_')}`;
+      const filePath = `products/${fileName}`;
+      
+      // Upload the image to Supabase Storage
+      const { error: uploadError, data } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, imageFile);
+      
+      if (uploadError) throw uploadError;
+
+      // Get the public URL for the uploaded image
+      const { data: { publicUrl } } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(filePath);
+      
+      return publicUrl;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      toast({
+        title: "Erro ao fazer upload da imagem",
+        description: "Não foi possível fazer o upload da imagem. Por favor, tente novamente.",
+        variant: "destructive"
+      });
+      return null;
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      // Upload image if there's a file selected
+      let imageUrl = formData.image_url;
+      if (imageFile) {
+        const uploadedUrl = await uploadImage();
+        if (uploadedUrl) {
+          imageUrl = uploadedUrl;
+        }
+      }
+
       const productData = {
         name: formData.name,
         description: formData.description,
@@ -122,7 +196,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
         stock: parseInt(formData.stock),
         category: formData.category,
         subcategory: formData.subcategory || null,
-        image_url: formData.image_url || null,
+        image_url: imageUrl || null,
       };
 
       let result;
@@ -209,23 +283,61 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="image_url">URL da imagem</Label>
-            <div className="flex gap-2">
-              <Input
-                id="image_url"
-                name="image_url"
-                value={formData.image_url}
-                onChange={handleChange}
-                placeholder="https://"
-                className="flex-grow"
-              />
-              <Button type="button" size="icon" variant="outline">
-                <ImagePlus className="h-5 w-5" />
-              </Button>
+            <Label>Imagem do produto</Label>
+            <div className="flex flex-col gap-4">
+              {imagePreview && (
+                <div className="relative w-full h-48 bg-gray-100 rounded-md overflow-hidden">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              )}
+              
+              <div className="flex gap-2">
+                <div className="flex-grow">
+                  <Label htmlFor="image_url">URL da imagem</Label>
+                  <Input
+                    id="image_url"
+                    name="image_url"
+                    value={formData.image_url}
+                    onChange={handleChange}
+                    placeholder="https://"
+                    className="flex-grow"
+                    disabled={!!imageFile}
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={handleImageSelect}
+                    className="flex gap-2 items-center h-10"
+                  >
+                    <Upload className="h-4 w-4" />
+                    <span>Upload</span>
+                  </Button>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleImageChange}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                </div>
+              </div>
+              
+              {imageFile && (
+                <p className="text-sm text-muted-foreground">
+                  Arquivo selecionado: {imageFile.name}
+                </p>
+              )}
+              
+              <p className="text-sm text-muted-foreground">
+                Você pode adicionar uma imagem por URL ou fazer upload do seu dispositivo
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Insira uma URL válida para a imagem do produto
-            </p>
           </div>
         </div>
 
@@ -319,8 +431,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
         >
           Cancelar
         </Button>
-        <Button type="submit" disabled={loading}>
-          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        <Button type="submit" disabled={loading || uploadingImage}>
+          {(loading || uploadingImage) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {isEditing ? "Atualizar produto" : "Adicionar produto"}
         </Button>
       </div>

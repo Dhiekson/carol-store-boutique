@@ -64,7 +64,8 @@ const AdminCreationForm = () => {
         options: {
           data: {
             first_name: formData.firstName,
-            last_name: formData.lastName
+            last_name: formData.lastName,
+            role: 'admin'
           }
         }
       });
@@ -74,16 +75,30 @@ const AdminCreationForm = () => {
       }
 
       if (data.user) {
-        // Update the profile with admin role
-        const { error: profileError } = await supabase
+        // First, check if a profile already exists
+        const { data: existingProfile } = await supabase
           .from('profiles')
-          .update({
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            email: formData.email,
-            role: 'admin'
-          })
-          .eq('id', data.user.id);
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+        
+        // Update or insert the profile
+        const profileData = {
+          id: data.user.id,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          email: formData.email,
+          role: 'admin'
+        };
+        
+        const { error: profileError } = existingProfile 
+          ? await supabase
+              .from('profiles')
+              .update(profileData)
+              .eq('id', data.user.id)
+          : await supabase
+              .from('profiles')
+              .insert(profileData);
 
         if (profileError) {
           throw profileError;

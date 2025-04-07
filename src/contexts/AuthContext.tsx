@@ -81,7 +81,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching profile:', error);
@@ -166,12 +166,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return { error, data: null };
       }
 
-      // Also update the profiles table to include the email
       if (data.user) {
+        // Also update the profiles table to include the email and other data
         await supabase
           .from('profiles')
-          .update({ email: email })
-          .eq('id', data.user.id);
+          .upsert({ 
+            id: data.user.id,
+            email: email,
+            first_name: userData.firstName,
+            last_name: userData.lastName,
+            role: 'customer'
+          });
       }
 
       toast({
@@ -192,6 +197,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    setUser(null);
+    setSession(null);
+    setProfile(null);
     navigate('/login');
   };
 
@@ -202,9 +210,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { error } = await supabase
         .from('profiles')
         .update(data)
-        .eq('id', user.id)
-        .select()
-        .single();
+        .eq('id', user.id);
 
       if (error) {
         toast({
